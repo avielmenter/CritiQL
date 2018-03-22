@@ -57,3 +57,9 @@ typings/
 # dotenv environment variables file
 .env
 
+# compiled code
+/dist
+/build
+
+# Text editor config
+/.vscode
