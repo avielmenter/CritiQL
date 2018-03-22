@@ -3,15 +3,21 @@ import * as path from 'path';
 import * as bodyParser from 'body-parser';
 import * as methodOverride from 'method-override';
 import * as dotenv from 'dotenv';
+import * as logger from 'morgan';
+import * as favicon from 'serve-favicon';
 
 import apiRouter from './routes/api';
 
 dotenv.config();
 const app = express();
 
-app.use('/bundle.js', express.static(path.join(__dirname, '../dist/bundle.js')));
-app.use('/', express.static(path.join(__dirname, '../public')));
+app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
+app.use(express.static(path.join(__dirname, '../public')));
+app.use('/bundle.js', (req, res) => { 
+	res.sendFile(path.join(__dirname, '../dist/bundle.js'));
+});
 
+app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
@@ -38,6 +44,6 @@ app.use((err : Error, req : express.Request, res : express.Response, next : expr
 		res.sendFile(path.join(__dirname, '../public/500.html'));
 });
 
-app.listen(process.env.port || 3000, () => console.log('CritiQL listening on port ' + process.env.port + '.'));
+app.listen(process.env.PORT || 3000, () => console.log('CritiQL listening on port ' + (process.env.PORT || 3000) + '.'));
 
 export default app;

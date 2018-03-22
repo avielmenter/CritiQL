@@ -1,6 +1,7 @@
 {
 	"compilerOptions": {
 		"target": "es5",
+		"experimentalDecorators": true,
 		"jsx": "react",
 		"strict": true,
 		"strictNullChecks": true,
@@ -10,7 +11,7 @@
 		"outDir": "build"
 	},
 	"include": [
-		"src/**/*"
+		"src/**/*",
 	],
 	"exclude": [
 		"node_modules"
