@@ -14,8 +14,6 @@
 		constructor() {
 			super();
 			this.title = 'CritiQL';
-
-			console.log("test?");
 		}
 	}
 </script>

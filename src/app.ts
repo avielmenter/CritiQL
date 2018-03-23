@@ -12,10 +12,10 @@ dotenv.config();
 const app = express();
 
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
-app.use(express.static(path.join(__dirname, '../public')));
 app.use('/bundle.js', (req, res) => { 
 	res.sendFile(path.join(__dirname, '../dist/bundle.js'));
 });
+app.use(express.static(path.join(__dirname, '../public')));
 
 app.use(logger('dev'));
 app.use(bodyParser.urlencoded({ extended: true }));
