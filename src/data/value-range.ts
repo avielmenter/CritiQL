@@ -5,12 +5,12 @@ export type Dimension = "ROWS" | "COLUMNS" | "DIMENSION_UNSPECIFIED";
 export interface ValueRange {
 	range : SheetRange.SheetRange,
 	majorDimension : Dimension,
-	values : (string | void)[]
+	values : string[][]
 }
 
 export interface ValueRanges {
 	spreadsheetId : string,
-	valueRanges : (ValueRange | null)[]
+	valueRanges : ValueRange[]
 }
 
 export function ValueRange(obj : any) : ValueRange | null {
@@ -22,7 +22,7 @@ export function ValueRange(obj : any) : ValueRange | null {
 	if (!sr || !obj.values)
 		return null;
 
-	const values : (string | void)[] = obj.values.map((v : any) => String(v));
+	const values : string[][] = obj.values;
 	const dim : Dimension = obj.majorDimension == "ROWS" || obj.majorDimension == "COLS" ?
 							obj.majorDimension : 
 							"DIMENSION_UNSPECIFIED";
@@ -34,7 +34,7 @@ export function ValueRange(obj : any) : ValueRange | null {
 	};
 }
 
-export function ValueRanges(obj : any) : ValueRanges | null{
+export function ValueRanges(obj : any) : ValueRanges | null {
 	if (!obj || !obj.spreadsheetId || !obj.valueRanges)
 		return null;
 

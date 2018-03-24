@@ -9,6 +9,10 @@ export interface SheetRange {
 	endCell : SheetCell
 }
 
+const cellRegExp = /(([A-Z]+)([0-9]+))/i;
+const sheetRegExp = /('([^']*)'!)/i;
+const rangeRegExp = new RegExp(sheetRegExp.source + '?' + cellRegExp.source + ':' + cellRegExp.source, 'i');
+
 export function numberToColumnName(n : number) : string {
 	return n == 0 ? '' : 
 		numberToColumnName(Math.floor((n - 1) / 26)) + 				// first digit
@@ -32,13 +36,13 @@ export function SheetCell (cell : string) : SheetCell | null {
 	if (!cell)
 		return null;
 
-	const params = cell.trim().match(/([A-Z]*)([0-9]*)/i);
+	const params = cell.trim().match(cellRegExp);
 
-	if (params == null || params.length < 3)
+	if (params == null || params.length < 4)
 		return null;
 	
-	const col = columnNameToNumber(params[1]);
-	const row = +params[2];
+	const col = columnNameToNumber(params[2]);
+	const row = +params[3];
 
 	if (col <= 0 || row == NaN)
 		return null;
@@ -53,14 +57,14 @@ export function SheetRange(range : string) : SheetRange | null {
 	if (!range)
 		return null;
 
-	const params = range.trim().match(/(('[^']*')!)?([A-Z]*[0-9]*):([A-Z]*[0-9]*)/i);
+	const params = range.trim().match(rangeRegExp);
 
 	if (!params || params.length < 3)
 		return null;
 
 	const sheet = !params[2] ? undefined : params[2]; 
 	const start = SheetCell(params[3]);
-	const end = SheetCell(params[4]);
+	const end = SheetCell(params[6]);
 
 	if (!start || !end)
 		return null;
@@ -77,6 +81,6 @@ export function cellToString(sc : SheetCell) : string {
 }
 
 export function rangeToString(sr : SheetRange) : string {
-	const sheet = !sr.sheet ? '' : sr.sheet + '!';
+	const sheet = !sr.sheet ? '' : '\'' + sr.sheet + '\'!';
 	return sheet + cellToString(sr.startCell) + ':' + cellToString(sr.endCell);
 }
