@@ -50,6 +50,7 @@ export interface Book {
 
 export const api = google.sheets('v4');
 export const VM_SPREADSHEET_ID = '1OEg29XbL_YpO0m5JrLQpOPYTnxVsIg8iP67EYUrtRJg';
+export const MN_SPREADSHEET_ID = '1FFuw5c6Hk1NUlHv2Wvr5b9AElLA51KtRl9ZruPU8r9k';
 
 export enum COLUMNS {
 	EPISODE = 'Episode',

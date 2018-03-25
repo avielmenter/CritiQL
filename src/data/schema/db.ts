@@ -51,7 +51,8 @@ export async function getCharacters(con : mongoose.Connection, book : Book) : Pr
 	const characterNames = getCharacterNames(book);
 	const characterPromises = characterNames.map(name => Character.createCharacter(con, name));
 	(await Promise.all(characterPromises)).forEach(character => {
-		characters[character.name] = character;
+		if (character != null)
+			characters[character.name] = character;
 	});
 
 	return characters;

@@ -14,10 +14,12 @@ const schema : mongoose.Schema = new mongoose.Schema({
 	}
 });
 
-const nameErrors : { [badName : string] : string } = {
+const NAME_ERRORS : { [badName : string] : string } = {
 	'Vex\'alhia': 'Vex\'ahlia',
 	'Tibierus': 'Tiberius' 
 }
+
+const INVALID_CHARACTERS = ['Na', '1 Freq', '20 Freq', ''];
 
 export type CharacterDictionary = { [characterName : string] : Character };
 
@@ -33,8 +35,8 @@ export function sanitizeCharacterName(name : string) : string {
 			formatted = formatted.substr(0, i) + formatted[i].toUpperCase() + formatted.substr(i + 1);
 	}
 
-	if (Object.keys(nameErrors).includes(formatted))
-		return nameErrors[formatted];
+	if (Object.keys(NAME_ERRORS).includes(formatted))
+		return NAME_ERRORS[formatted];
 	return formatted;
 }
 
@@ -48,12 +50,16 @@ export async function getCharacterByName(con : mongoose.Connection, name : strin
 	return await model.findOne(query);
 }
 
-export async function createCharacter(con : mongoose.Connection, name : string) : Promise<Character> {
+export async function createCharacter(con : mongoose.Connection, name : string) : Promise<Character | null> {
 	const model = getModel(con);
+	const sanitizedName = sanitizeCharacterName(name);
+
+	if (INVALID_CHARACTERS.includes(sanitizedName))
+		return null;
 
 	return await model.findOneAndUpdate(
-		{ name: sanitizeCharacterName(name) },
-		{ name: sanitizeCharacterName(name) },
+		{ name: sanitizedName },
+		{ name: sanitizedName },
 		{ upsert: true, new: true }
 	);
 }

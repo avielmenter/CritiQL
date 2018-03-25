@@ -1,9 +1,9 @@
 import * as mongoose from 'mongoose';
 
-import { RowDictionary, COLUMNS, Book } from '../sheets';
+import { RowDictionary, COLUMNS, Book, Sheet } from '../sheets';
 
 import { Character, CharacterDictionary, sanitizeCharacterName } from './character';
-import { Episode, EpisodeDictionary } from './episode';
+import { Episode, EpisodeDictionary, markRollsInDB } from './episode';
 
 import { ValueRange } from '../value-range';
 
@@ -212,26 +212,30 @@ export async function createFromSheetRow(con : mongoose.Connection, character : 
 	return await model.create(rollDoc);
 }
 
+function createFromEpisode(sheet : Sheet, episode : Episode, characters : CharacterDictionary) {
+	if (episode.rollsInDB)
+		return []; // skip episodes whose rolls are already in the database
+
+	return sheet.rows.map(row => {
+		const characterName = sanitizeCharacterName(row[COLUMNS.CHARACTER]);
+		const character = characters[characterName];
+
+		return !character ? null : getRollDocument(character, episode, row);
+	});
+}
+
 export async function createFromBook(con : mongoose.Connection, book : Book, characters : CharacterDictionary, episodes : EpisodeDictionary) : Promise<Roll[]> {
 	const rollDocs = Object.keys(book.sheets).map(title => {
 		const sheet = book.sheets[title];
 		const episode = episodes[title];
 
-		if (episode.rollsInDB)
-			return []; // skip episodes whose rolls are already in the database
-
-		return sheet.rows.map(row => {
-			const characterName = sanitizeCharacterName(row[COLUMNS.CHARACTER]);
-			const character = characters[characterName];
-
-			return getRollDocument(character, episode, row);
-		});
-	}).reduce((prev, curr) => prev.concat(curr));
+		return createFromEpisode(sheet, episode, characters);
+	}).reduce((prev, curr) => prev.concat(curr)).filter(r => r != null);
 
 	const model = getModel(con);
 
 	const rolls = await model.insertMany(rollDocs);
-	await Promise.all(Object.keys(episodes).map(title => episodes[title].update({ $set: { rollsInDB: true } }, { new: true })));
+	await Promise.all(Object.keys(episodes).map(title => markRollsInDB(episodes[title])));
 
 	return rolls;
 }

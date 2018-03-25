@@ -7,14 +7,18 @@ import * as DB from '../data/schema/db';
 let router = Router();
 
 async function fillDB(con : Connection) : Promise<number> {
-	const book = await Sheets.getSheetData(Sheets.api, Sheets.VM_SPREADSHEET_ID);
-	if (!book)
+	const books = await Promise.all([
+		Sheets.getSheetData(Sheets.api, Sheets.VM_SPREADSHEET_ID),
+		Sheets.getSheetData(Sheets.api, Sheets.MN_SPREADSHEET_ID)
+	]);
+
+	if (!books || books.some(book => !book))
 		return 0;
 
-	console.log('Retrieved spreadsheet.');
+	console.log('Retrieved spreadsheets.');
 
-	const rolls = await DB.fillFromBook(con, book);
-	return rolls.length;
+	const rolls = await Promise.all(books.map(book => DB.fillFromBook(con, book as Sheets.Book)));
+	return rolls.map(r => r.length).reduce((prev, curr) => prev + curr);
 }
 
 router.get('/', (req, res, next) => {

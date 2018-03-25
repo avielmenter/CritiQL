@@ -53,3 +53,10 @@ export async function findByTitle(con : mongoose.Connection, title : string) : P
 	const model = getModel(con);
 	return await model.findOne({ title: new RegExp(title.trim(), 'i') });
 }
+
+export async function markRollsInDB(episode : Episode) : Promise<Episode> {
+	return episode.update(
+		{ $set: { rollsInDB: true } },
+		{ new: true }	
+	);
+}
