@@ -29,8 +29,4 @@ router.get('/', (req, res, next) => {
 	});
 });
 
-router.get('/', (req, res) => {
-	res.send("API!");
-});
-
 export default router;
