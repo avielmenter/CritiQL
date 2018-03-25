@@ -23,7 +23,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(methodOverride());
 
-app.use('/api', apiRouter);
+app.use('/graphql', apiRouter);
 
 app.use((req, res, next) => {
 	let err = new Error('Not Found');

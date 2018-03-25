@@ -5,17 +5,21 @@ export interface Episode extends mongoose.Document {
 	episodeNo? : number,
 	title : string,
 	url? : string,
-	campaign : number
+	campaign : number,
+	rollsInDB : boolean
 };
 
-export type Model = mongoose.Model<Episode>
+type Model = mongoose.Model<Episode>
 
-export const schema : mongoose.Schema = new mongoose.Schema({
+const schema : mongoose.Schema = new mongoose.Schema({
 	episodeNo : Number,
 	title : String,
 	url : String,
-	campaign : Number
+	campaign : Number,
+	rollsInDB : Boolean
 });
+
+export type EpisodeDictionary = { [episodeTitle : string] : Episode };
 
 function getEpisodeNumber(title : string) : number | null {
 	const parsed = title.match(/Episode (2-)?(\d+)/i);
@@ -25,7 +29,7 @@ function getEpisodeNumber(title : string) : number | null {
 	return parseInt(parsed[2]);
 }
 
-export function getModel(con : mongoose.Connection) : Model {
+function getModel(con : mongoose.Connection) : Model {
 	return con.model('Episode', schema);
 }
 
@@ -35,10 +39,14 @@ export async function createFromSheet(con : mongoose.Connection, sheet : SheetIn
 	const episodeDoc = {
 		title: sheet.properties.title,
 		episodeNo: getEpisodeNumber(sheet.properties.title),
-		campaign: campaign
+		campaign: campaign,
 	};
 
-	return await model.create(episodeDoc);
+	return await model.findOneAndUpdate(
+		{ title: sheet.properties.title },
+		{ $set: episodeDoc },
+		{ upsert: true, new: true }
+	);
 }
 
 export async function findByTitle(con : mongoose.Connection, title : string) : Promise<Episode | null> {

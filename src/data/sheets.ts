@@ -43,13 +43,26 @@ export interface Info {
 	sheets : SheetInfo[]
 };
 
-export interface Document {
+export interface Book {
 	info : Info,
 	sheets : { [sheetName : string]: Sheet }
 }
 
 export const api = google.sheets('v4');
 export const VM_SPREADSHEET_ID = '1OEg29XbL_YpO0m5JrLQpOPYTnxVsIg8iP67EYUrtRJg';
+
+export enum COLUMNS {
+	EPISODE = 'Episode',
+	TIME = 'Time',
+	CHARACTER = 'Character',
+	TYPE_OF_ROLL = 'Type of Roll',
+	TOTAL_VALUE = 'Total Value',
+	NATURAL_VALUE = 'Natural Value',
+	CRIT = 'Crit?',
+	DAMAGE = 'Damage',
+	KILLS = '# Kills',
+	NOTES = 'Notes'
+};
 
 function promisifyAPICall(apiCall : GoogleAPICall, params : any) : Promise<any> {
 	return new Promise<any>((resolve : (r : any) => any, reject : (e : any) => any) => {
@@ -112,7 +125,7 @@ function getHeaderRange(sheet : SheetInfo) : SheetRange.SheetRange {
 }
 
 function getColumnIndices(headerVR : ValueRange.ValueRange) : IndexDictionary {
-	let columns : any = {};
+	let columns : IndexDictionary = {};
 
 	if (!headerVR || !headerVR.values || headerVR.values.length != 1 || !headerVR.values[0])
 		return {};
@@ -120,11 +133,11 @@ function getColumnIndices(headerVR : ValueRange.ValueRange) : IndexDictionary {
 	const header : string[] = headerVR.values[0];
 
 	for (let i = 0; i < header.length; i++) {
-		const colName = header[i];
+		const colName = header[i] == 'Damage Dealt' ? 'Damage' : header[i];
 		if (!colName)
 			continue;
-
-		columns[colName] = i;
+		
+		columns[colName] = (colName in columns) ? Math.min(columns[colName], i) : i;
 	}
 
 	return columns;
@@ -134,7 +147,7 @@ function getRowDictionary(row : string[], indices : IndexDictionary) : RowDictio
 	let dict : RowDictionary = {};
 
 	for (let column of Object.keys(indices)) {
-		dict[column == 'Damage Dealt' ? 'Damage' : column] = row[indices[column]];
+		dict[column] = row[indices[column]];
 	}
 
 	return dict;
@@ -178,7 +191,7 @@ function getDataRange(info : SheetInfo) : SheetRange.SheetRange {
 	};
 }
 
-export async function getSheetData(sheetsAPI : any, spreadsheetId : string) : Promise<Document | null> {
+export async function getSheetData(sheetsAPI : any, spreadsheetId : string) : Promise<Book | null> {
 	const info = await getSheetInfo(sheetsAPI, spreadsheetId);
 	if (!info)
 		return null;
