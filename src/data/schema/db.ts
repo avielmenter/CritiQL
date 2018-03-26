@@ -9,8 +9,9 @@ export function getConnection() : mongoose.Connection {
 	const dbAuth = (process.env.CRITIQL_DB_USER === undefined || process.env.CRITIQL_DB_USER == '') ? 
 					'' : (process.env.CRITIQL_DB_USER + ':' + process.env.CRITIQL_DB_PASSWORD + '@');
 
-	const conStr = 'mongodb://' + dbAuth + process.env.CRITIQL_DB_SERVER + '/' + process.env.CRITIQL_DB_SCHEMA +
-					(!process.env.CRITIQL_DB_OPTIONS ? '' : '?' + process.env.CRITIQL_DB_OPTIONS);
+	const conStr = 'mongodb://' + dbAuth + process.env.CRITIQL_DB_SERVER + ':' + process.env.CRITIQL_DB_PORT + '/' +
+					 process.env.CRITIQL_DB_SCHEMA + 
+					 (!process.env.CRITIQL_DB_OPTIONS ? '' : '?' + process.env.CRITIQL_DB_OPTIONS);
 
 	return mongoose.createConnection(conStr);
 }

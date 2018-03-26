@@ -6,10 +6,10 @@ import * as dotenv from 'dotenv';
 import * as logger from 'morgan';
 import * as favicon from 'serve-favicon';
 
-import apiRouter from './routes/api';
-
 dotenv.config();
 const app = express();
+
+import apiRouter from './routes/api';
 
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
 app.use('/bundle.js', (req, res) => { 

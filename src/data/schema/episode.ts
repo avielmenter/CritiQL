@@ -49,9 +49,14 @@ export async function createFromSheet(con : mongoose.Connection, sheet : SheetIn
 	);
 }
 
-export async function findByTitle(con : mongoose.Connection, title : string) : Promise<Episode | null> {
+export async function getEpisodeByTitle(con : mongoose.Connection, title : string) : Promise<Episode | null> {
 	const model = getModel(con);
 	return await model.findOne({ title: new RegExp(title.trim(), 'i') });
+}
+
+export async function getEpisodeById(con : mongoose.Connection, id : string) : Promise<Episode | null> {
+	const model = getModel(con);
+	return await model.findById(id);
 }
 
 export async function markRollsInDB(episode : Episode) : Promise<Episode> {
@@ -59,4 +64,33 @@ export async function markRollsInDB(episode : Episode) : Promise<Episode> {
 		{ $set: { rollsInDB: true } },
 		{ new: true }	
 	);
+}
+
+export async function findEpisodes(con : mongoose.Connection, filter : any) : Promise<Episode[]> {
+	const model = getModel(con);
+
+	if (filter.id) {
+		const episode = await model.findById(filter.id);
+		return !episode ? [] : [episode];
+	}
+	
+	let query : any = {};
+
+	if (filter.campaign)
+		query.campaign = filter.campaign;
+	
+	if (filter.title)
+		query.title = filter.title;
+	else if (filter.episodeNo)
+		query.episodeNo = filter.episodeNo;
+	else if (filter.episodeAtLeast || filter.episodeAtMost) {
+		query.episodeNo = {};
+		if (filter.episodeAtLeast)
+			query.episodeNo.$gte = filter.episodeAtLeast;
+		else if (filter.episodeAtMost)
+			query.episodeNo.$lte = filter.episodeAtMost;
+	}
+
+	return await model.find(query);
+	
 }

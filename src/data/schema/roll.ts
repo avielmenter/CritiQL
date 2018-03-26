@@ -49,18 +49,18 @@ export enum ROLL_TYPE {
 };
 
 export type SKILL_TYPE = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
-export type SKILL_RANGE = { 
+type SkillRange = { 
 	$gte : ROLL_TYPE,
 	$lt : ROLL_TYPE
 }
 
-export type ROLL_TIME = {
+export type RollTime = {
 	hours : number,
 	minutes : number,
 	seconds : number
 }
 
-export const SKILLS : { [key in SKILL_TYPE] : SKILL_RANGE } = {
+export const SKILLS : { [key in SKILL_TYPE] : SkillRange } = {
 	STR: {
 		$gte: ROLL_TYPE.STRENGTH,
 		$lt: ROLL_TYPE.DEXTERITY
@@ -90,7 +90,7 @@ export const SKILLS : { [key in SKILL_TYPE] : SKILL_RANGE } = {
 export interface Roll extends mongoose.Document {
 	episode_id : string,
 	character_id : string,
-	time : ROLL_TIME | null,
+	time : RollTime | null,
 	type_of_roll : ROLL_TYPE,
 	total : number,
 	natural : number | null,
@@ -119,7 +119,7 @@ const schema : mongoose.Schema = new mongoose.Schema({
 	notes : String
 });
 
-function timeFromRow(row : RowDictionary) : ROLL_TIME | null {
+function timeFromRow(row : RowDictionary) : RollTime | null {
 	const timeString = row[COLUMNS.TIME];
 	if (!timeString)
 		return null;
@@ -238,4 +238,45 @@ export async function createFromBook(con : mongoose.Connection, book : Book, cha
 	await Promise.all(Object.keys(episodes).map(title => markRollsInDB(episodes[title])));
 
 	return rolls;
+}
+
+export async function findRolls(con : mongoose.Connection, filter : any, parent? : any) : Promise<Roll[]> {
+	const model = getModel(con);
+	
+	if (filter.id) {
+		const roll = await model.findById(filter.id);
+		return !roll ? [] : [roll];
+	}
+
+	let query : any = {};
+
+	if (parent && parent.title) 			// for searching by episode
+		query.episode_id = parent._id;
+	else if (parent && parent.name)			// for searching by title
+		query.character_id = parent._id;
+
+	if (filter.rollType)
+		query.type_of_roll = filter.rollType;
+
+	if (filter.naturalValue) {
+		query.natural = filter.naturalValue;
+	} else if (filter.naturalAtLeast || filter.naturalAtMost) {
+		query.natural = {};
+		if (filter.naturalAtLeast)
+			query.natural.$gte = filter.naturalAtLeast;
+		if (filter.naturalAtMost)
+			query.natural.$lte = filter.naturalAtMost;
+	}
+
+	if (filter.totalValue) {
+		query.total = filter.totalValue;
+	} else if (filter.totalAtLeast || filter.totalAtMost) {
+		query.total = {};
+		if (filter.totalAtLeast)
+			query.total.$gte = filter.totalAtLeast;
+		if (filter.totalAtMost)
+			query.total.$lte = filter.totalAtMost;
+	}
+
+	return await model.find(query);
 }

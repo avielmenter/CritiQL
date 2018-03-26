@@ -50,6 +50,11 @@ export async function getCharacterByName(con : mongoose.Connection, name : strin
 	return await model.findOne(query);
 }
 
+export async function getCharacterById(con : mongoose.Connection, id : string) : Promise<Character | null> {
+	const model = getModel(con);
+	return await model.findById(id);
+}
+
 export async function createCharacter(con : mongoose.Connection, name : string) : Promise<Character | null> {
 	const model = getModel(con);
 	const sanitizedName = sanitizeCharacterName(name);
@@ -62,4 +67,20 @@ export async function createCharacter(con : mongoose.Connection, name : string) 
 		{ name: sanitizedName },
 		{ upsert: true, new: true }
 	);
+}
+
+export async function findCharacters(con : mongoose.Connection, filter : any) : Promise<Character[]> {
+	const model = getModel(con);
+
+	if (filter.id) {
+		const character = await model.findById(filter.id);
+		return !character ? [] : [character];
+	}
+
+	let query : any = {};
+	
+	if (filter.name)
+		query.name = sanitizeCharacterName(filter.name);
+
+	return await model.find(query);
 }
