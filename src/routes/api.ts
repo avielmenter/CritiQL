@@ -21,8 +21,10 @@ async function checkLastRequestTime(con : Connection, req : Request) : Promise<b
 }
 
 async function fillDB(con : Connection, req : Request) : Promise<number> {
-	if (checkLastRequestTime(con, req))
+	if (await checkLastRequestTime(con, req))
 		return 0;
+
+	console.log('Retrieving spreadsheets...')
 
 	const books = await Promise.all([
 		Sheets.getSheetData(Sheets.api, Sheets.VM_SPREADSHEET_ID),
@@ -32,7 +34,7 @@ async function fillDB(con : Connection, req : Request) : Promise<number> {
 	if (!books || books.some(book => !book))
 		return 0;
 
-	console.log('Retrieved spreadsheets.');
+	console.log('Spreadsheets retrieved.');
 
 	const rolls = await Promise.all(books.map(book => DB.fillFromBook(con, book as Sheets.Book)));
 	return rolls.map(r => r.length).reduce((prev, curr) => prev + curr);
