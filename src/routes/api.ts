@@ -17,7 +17,7 @@ async function checkLastRequestTime(con : Connection, req : Request) : Promise<b
 	const secondsSinceLastLog = await RequestLog.secondsSinceLastLog(con);
 	await RequestLog.createLog(con, req.ip);
 
-	return secondsSinceLastLog < 100;
+	return secondsSinceLastLog < (process.env.CRITIQL_SHEETS_RATE_LIMIT || 600);
 }
 
 async function fillDB(con : Connection, req : Request) : Promise<number> {

@@ -20,6 +20,7 @@ export enum ROLL_TYPE {
 	STEALTH,
 	INITIATIVE,
 	CONSTITUTION,
+	CONCENTRATION,
 	CONSTITUTION_SAVE,
 	INTELLIGENCE,
 	INTELLIGENCE_SAVE,
@@ -42,11 +43,48 @@ export enum ROLL_TYPE {
 	PERFORMANCE,
 	PERSUASION,
 	ATTACK,
+	SPELL_ATTACK,
 	TINKERING,
 	THIEVES_TOOLS,
+	BLACKSMITH_TOOLS,
+	ALCHEMY_KIT,
+	DISGUISE_KIT,
 	DIVINE_INTERVENTION,
-	DAMAGE
+	DAMAGE,
+	INSPIRATION,
+	COUNTERSPELL,
+	CUTTING_WORDS,
+	HEALING,
+	HIT_DICE,
+	SECOND_WIND,
+	BLESS,
+	GAMBIT_OF_ORD,
+	MISSILE_SNARE,
+	POTION_DURATION,
+	RECHARGE,
+	DEFLECT_MISSILES,
+	HEROES_FEAST,
+	BEARD,
+	TELEKINESIS,
+	PARRY,
+	RESURRECTION_ROLL,
+	SLEEP_ARROW,
+	DEATH_SAVE
 };
+
+const rollTypeErrors : { [badType : string] : string } = {
+	'STEATH': 'STEALTH',
+	'WISDOM_SAVE?': 'WISDOM_SAVE',
+	'WISDOM_SAVING': 'WISDOM_SAVE',
+	'DEX_SAVE': 'DEXTERITY_SAVE',
+	'ALCHEMY?': 'ALCHEMY_KIT',
+	'BEARD_CHECK': 'BEARD',
+	'PERCENTILE': 'BEARD',
+	'ARCANA?': 'ARCANA',
+	'RESSURECTION_ROLL': 'RESURRECTION_ROLL',
+	'PERSUASION?': 'PERSUASION',
+	'FIX': 'TINKERING'
+}
 
 export type SKILL_TYPE = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
 type SkillRange = { 
@@ -92,6 +130,7 @@ export interface Roll extends mongoose.Document {
 	character_id : string,
 	time : RollTime | null,
 	type_of_roll : ROLL_TYPE,
+	roll_type_raw : string,
 	total : number,
 	natural : number | null,
 	crit : boolean,
@@ -111,6 +150,7 @@ const schema : mongoose.Schema = new mongoose.Schema({
 		seconds : Number
 	},
 	type_of_roll : Number,
+	roll_type_raw : String,
 	total : Number,
 	natural : Number,
 	crit : Boolean,
@@ -143,14 +183,20 @@ function getRollType(typeString : string) : ROLL_TYPE {
 	if (!typeString)
 		return ROLL_TYPE.UNKNOWN;
 
-	const formatted = typeString.replace('\'', '')
-								.replace(/\s+/i, ' ')
-								.replace(' ', '_')
+	const formatted = typeString.trim()
+								.replace('\'', '')
+								.replace(/\s+/g, '_')
 								.toUpperCase();
 
-	const maybeRollType : ROLL_TYPE | undefined = (<any>ROLL_TYPE)[formatted];
-	if (!maybeRollType)
+	const corrected = Object.keys(rollTypeErrors).includes(formatted) ? rollTypeErrors[formatted] : formatted;
+
+	const maybeRollType : ROLL_TYPE | undefined = (<any>ROLL_TYPE)[corrected];
+	if (!maybeRollType) {
+		console.log("UKNOWN ROLL TYPE:");
+		console.log('\t' + typeString);
+		console.log('\t' + formatted);
 		return ROLL_TYPE.UNKNOWN;
+	}
 	return maybeRollType;
 }
 
@@ -185,6 +231,7 @@ function getRollDocument(character : Character, episode : Episode, row : RowDict
 		character_id: character._id,
 		time: rollTime,
 		type_of_roll: rollType,
+		roll_type_raw: row[COLUMNS.TYPE_OF_ROLL],
 		total: sanitizeInt(row[COLUMNS.TOTAL_VALUE]),
 		natural: sanitizeNaturalRoll(row[COLUMNS.NATURAL_VALUE]),
 		crit: isCrit(row[COLUMNS.CRIT]),
@@ -255,11 +302,11 @@ export async function findRolls(con : mongoose.Connection, filter : any, parent?
 	else if (parent && parent.name)			// for searching by title
 		query.character_id = parent._id;
 
-	if (filter.rollType)
+	if (filter.rollType !== null && filter.rollType !== undefined)
 		query.type_of_roll = filter.rollType;
 
-	if (filter.naturalValue) {
-		query.natural = filter.naturalValue;
+	if (filter.natural) {
+		query.natural = filter.natural;
 	} else if (filter.naturalAtLeast || filter.naturalAtMost) {
 		query.natural = {};
 		if (filter.naturalAtLeast)
@@ -268,8 +315,8 @@ export async function findRolls(con : mongoose.Connection, filter : any, parent?
 			query.natural.$lte = filter.naturalAtMost;
 	}
 
-	if (filter.totalValue) {
-		query.total = filter.totalValue;
+	if (filter.total) {
+		query.total = filter.total;
 	} else if (filter.totalAtLeast || filter.totalAtMost) {
 		query.total = {};
 		if (filter.totalAtLeast)
@@ -278,5 +325,9 @@ export async function findRolls(con : mongoose.Connection, filter : any, parent?
 			query.total.$lte = filter.totalAtMost;
 	}
 
-	return await model.find(query);
+	let mQuery = model.find(query);
+	if (filter.limit)
+		mQuery.limit(filter.limit);
+
+	return await mQuery;
 }

@@ -30,7 +30,7 @@ const RollTimeQLType = new GraphQL.GraphQLObjectType({
 		},
 		minutes: { 
 			type: GraphQL.GraphQLInt,
-			resolve: (t : Roll.RollTime) => t.seconds
+			resolve: (t : Roll.RollTime) => t.minutes
 		},
 		seconds: {
 			type: GraphQL.GraphQLInt,
@@ -68,6 +68,10 @@ export const RollQLType = new GraphQL.GraphQLObjectType({
 			type: GraphQL.GraphQLString,
 			resolve: (r : Roll.Roll) => Roll.ROLL_TYPE[r.type_of_roll]
 		},
+		rawRollType: {
+			type: GraphQL.GraphQLString,
+			resolve: (r : Roll.Roll) => r.roll_type_raw
+		},
 		total: { type: GraphQL.GraphQLInt },
 		natural: { type: GraphQL.GraphQLInt },
 		crit: { type: GraphQL.GraphQLBoolean },
@@ -82,12 +86,13 @@ export const RollsQLField = {
 	args: { 
 		id: { type: GraphQL.GraphQLID },
 		rollType: { type: RollTypeQLEnum },
-		naturalValue: { type: GraphQL.GraphQLInt },
+		natural: { type: GraphQL.GraphQLInt },
 		naturalAtLeast: { type: GraphQL.GraphQLInt },
 		naturalAtMost: { type: GraphQL.GraphQLInt },
-		totalValue: { type: GraphQL.GraphQLInt },
+		total: { type: GraphQL.GraphQLInt },
 		totalAtLeast: { type: GraphQL.GraphQLInt },
-		totalAtMost: { type: GraphQL.GraphQLInt }
+		totalAtMost: { type: GraphQL.GraphQLInt },
+		limit: { type: GraphQL.GraphQLInt }
 	},
 	resolve: (obj : any, args : any, context : any) => {
 		const con = context.db as Connection;
