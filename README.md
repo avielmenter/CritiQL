@@ -2,7 +2,7 @@
 A GraphQL API for accessing [CritRoleStats](https://www.critrolestats.com/) data.
 
 # About
-CritiQL (pronounced "critical") is a [GraphQL](https://graphql.org/) API for querying CritRoleStats roll data. It allows users to query the CritRoleStats [Vox Machina](https://docs.google.com/spreadsheets/d/1OEg29XbL_YpO0m5JrLQpOPYTnxVsIg8iP67EYUrtRJg/edit) and [Mighty Neight](https://docs.google.com/spreadsheets/d/1FFuw5c6Hk1NUlHv2Wvr5b9AElLA51KtRl9ZruPU8r9k/edit#gid=0) spreadsheets using GraphQL.
+CritiQL (pronounced "critical") is a [GraphQL](https://graphql.org/) API for querying CritRoleStats roll data. It allows users to query the CritRoleStats [Vox Machina](https://docs.google.com/spreadsheets/d/1OEg29XbL_YpO0m5JrLQpOPYTnxVsIg8iP67EYUrtRJg/edit) and [Mighty Nein](https://docs.google.com/spreadsheets/d/1FFuw5c6Hk1NUlHv2Wvr5b9AElLA51KtRl9ZruPU8r9k/edit#gid=0) spreadsheets using GraphQL.
 
 Critters have [previously requested](https://www.critrolestats.com/blog/2017/10/19/quick-answers-58) an API, but CritRoleStats has so far declined to make one. Thankfully, Google exposes spreadsheet data through their own API, which CritiQL uses to download CritRoleStats' data and make it queryable via GraphQL.
 
