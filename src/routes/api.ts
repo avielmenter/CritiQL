@@ -13,15 +13,16 @@ import { QuerySchema } from '../api/schema';
 
 let router = Router();
 
-async function checkLastRequestTime(con : Connection, req : Request) : Promise<boolean> {
+async function shouldSkipSpreadsheetRetrieval(con : Connection, req : Request) : Promise<boolean> {
 	const secondsSinceLastLog = await RequestLog.secondsSinceLastLog(con);
-	await RequestLog.createLog(con, req.ip);
+	const shouldFetch = secondsSinceLastLog >= (process.env.CRITIQL_SHEETS_RATE_LIMIT || 600);
 
-	return secondsSinceLastLog < (process.env.CRITIQL_SHEETS_RATE_LIMIT || 600);
+	await RequestLog.createLog(con, req.ip, shouldFetch);
+	return !shouldFetch;
 }
 
 async function fillDB(con : Connection, req : Request) : Promise<number> {
-	if (await checkLastRequestTime(con, req))
+	if (await shouldSkipSpreadsheetRetrieval(con, req))
 		return 0;
 
 	console.log('Retrieving spreadsheets...')
