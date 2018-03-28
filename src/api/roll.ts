@@ -19,6 +19,22 @@ function createRollQLTypeEnum() {
 	return valuesDict;
 }
 
+function createSkillQLTypeEnum() {
+	let valuesDict : { [typeName : string] : { value : string } } = {};
+	for (let key in Roll.SKILLS) {
+		valuesDict[key] = { value: key };
+	}
+
+	return valuesDict;
+}
+
+function getTimeString(time : Roll.RollTime | null) {
+	if (!time)
+		return '';
+
+	return time.hours.toString() + ':' + time.minutes.toString().padStart(2, '0') + ':' + time.seconds.toString().padStart(2, '0');
+}
+
 const RollTimeQLType = new GraphQL.GraphQLObjectType({
 	name: 'time',
 	description: 'What time did the roll take place? formattted as hh:mm:ss',
@@ -44,7 +60,14 @@ const RollTypeQLEnum = new GraphQL.GraphQLEnumType({
 	description: 'What type of roll was it?',
 
 	values: createRollQLTypeEnum()
-})
+});
+
+const SkillQLEnum = new GraphQL.GraphQLEnumType({
+	name: 'skillType',
+	description: 'What skill did the roll use?',
+
+	values: createSkillQLTypeEnum()
+});
 
 export const RollQLType = new GraphQL.GraphQLObjectType({
 	name: 'roll',
@@ -64,6 +87,10 @@ export const RollQLType = new GraphQL.GraphQLObjectType({
 			resolve: (r : Roll.Roll, args, context) => Character.getCharacterById(context.db, r.character_id)
 		},
 		time: { type: RollTimeQLType },
+		timeString : {
+			type: GraphQL.GraphQLString,
+			resolve: (r : Roll.Roll) => !r.time ? '' : getTimeString(r.time)
+		},
 		rollType: { 
 			type: GraphQL.GraphQLString,
 			resolve: (r : Roll.Roll) => Roll.ROLL_TYPE[r.type_of_roll]
@@ -86,6 +113,7 @@ export const RollsQLField = {
 	args: { 
 		id: { type: GraphQL.GraphQLID },
 		rollType: { type: RollTypeQLEnum },
+		skill: { type: SkillQLEnum },
 		natural: { type: GraphQL.GraphQLInt },
 		naturalAtLeast: { type: GraphQL.GraphQLInt },
 		naturalAtMost: { type: GraphQL.GraphQLInt },

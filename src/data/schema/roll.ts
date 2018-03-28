@@ -304,6 +304,8 @@ export async function findRolls(con : mongoose.Connection, filter : any, parent?
 
 	if (filter.rollType !== null && filter.rollType !== undefined)
 		query.type_of_roll = filter.rollType;
+	else if (filter.skill !== null && filter.skill !== undefined)
+		query.type_of_roll = SKILLS[filter.skill as SKILL_TYPE];
 
 	if (filter.natural) {
 		query.natural = filter.natural;
