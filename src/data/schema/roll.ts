@@ -6,6 +6,7 @@ import { Character, CharacterDictionary, sanitizeCharacterName } from './charact
 import { Episode, EpisodeDictionary, markRollsInDB } from './episode';
 
 import { ValueRange } from '../value-range';
+import { ObjectID } from 'bson';
 
 export enum ROLL_TYPE {
 	UNKNOWN,
@@ -86,7 +87,10 @@ const rollTypeErrors : { [badType : string] : string } = {
 	'FIX': 'TINKERING'
 }
 
+export type AGGREGATE_FIELDS = 'total' | 'natural' | 'damage' | 'kills';
+
 export type SKILL_TYPE = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
+
 type SkillRange = { 
 	$gte : ROLL_TYPE,
 	$lt : ROLL_TYPE
@@ -96,6 +100,14 @@ export type RollTime = {
 	hours : number,
 	minutes : number,
 	seconds : number
+}
+
+export type RollAggregate = {
+	count : number,
+	sum : number,
+	avg : number | null,
+	min : number,
+	max : number
 }
 
 export const SKILLS : { [key in SKILL_TYPE] : SkillRange } = {
@@ -142,8 +154,8 @@ export interface Roll extends mongoose.Document {
 type Model = mongoose.Model<Roll>;
 
 const schema : mongoose.Schema = new mongoose.Schema({
-	episode_id : String,
-	character_id : String,
+	episode_id : mongoose.Schema.Types.ObjectId,
+	character_id : mongoose.Schema.Types.ObjectId,
 	time : {
 		hours : Number,
 		minutes : Number,
@@ -227,8 +239,8 @@ function getRollDocument(character : Character, episode : Episode, row : RowDict
 	const rollType = getRollType(row[COLUMNS.TYPE_OF_ROLL]);
 
 	return {
-		episode_id: episode._id,
-		character_id: character._id,
+		episode_id: mongoose.Types.ObjectId(episode._id),
+		character_id: mongoose.Types.ObjectId(character._id),
 		time: rollTime,
 		type_of_roll: rollType,
 		roll_type_raw: row[COLUMNS.TYPE_OF_ROLL],
@@ -287,20 +299,13 @@ export async function createFromBook(con : mongoose.Connection, book : Book, cha
 	return rolls;
 }
 
-export async function findRolls(con : mongoose.Connection, filter : any, parent? : any) : Promise<Roll[]> {
-	const model = getModel(con);
-	
-	if (filter.id) {
-		const roll = await model.findById(filter.id);
-		return !roll ? [] : [roll];
-	}
-
+function getQuery(filter : any, parent? : any) : any {
 	let query : any = {};
 
 	if (parent && parent.title) 			// for searching by episode
-		query.episode_id = parent._id;
+		query.episode_id = mongoose.Types.ObjectId(parent._id);
 	else if (parent && parent.name)			// for searching by title
-		query.character_id = parent._id;
+		query.character_id = mongoose.Types.ObjectId(parent._id);
 
 	if (filter.rollType !== null && filter.rollType !== undefined)
 		query.type_of_roll = filter.rollType;
@@ -327,9 +332,98 @@ export async function findRolls(con : mongoose.Connection, filter : any, parent?
 			query.total.$lte = filter.totalAtMost;
 	}
 
+	return query;
+}
+
+export async function findRolls(con : mongoose.Connection, filter : any, parent? : any) : Promise<Roll[]> {
+	const model = getModel(con);
+	
+	if (filter.id) {
+		const roll = await model.findById(filter.id);
+		return !roll ? [] : [roll];
+	}
+
+	const query = getQuery(filter, parent);
+
 	let mQuery = model.find(query);
 	if (filter.limit)
 		mQuery.limit(filter.limit);
 
 	return await mQuery;
+}
+
+export async function count(con : mongoose.Connection, filter : any, parent? : any) : Promise<number> {
+	const model = getModel(con);
+
+	if (filter.id) {
+		const roll = await model.findById(filter.id);
+		return !roll ? 0 : 1;
+	}
+
+	const query = getQuery(filter, parent);
+	
+	let mQuery = model.count(query);
+	if (filter.limit)
+		mQuery.limit(filter.limit);
+
+	return await mQuery;
+}
+
+export async function aggregateField(con : mongoose.Connection, fieldName : AGGREGATE_FIELDS, filter : any, parent? : any) : Promise<RollAggregate | null> {
+	const model = getModel(con);
+
+	if (filter.id) {
+		const roll = await model.findById(filter.id);
+		if (!roll)
+			return null;
+		else
+			return { 
+				count: 1,
+				sum: roll[fieldName] as number,
+				avg: roll[fieldName] as number,
+				min: roll[fieldName] as number,
+				max: roll[fieldName] as number 
+			};
+	}
+
+	let query = getQuery(filter, parent);
+	if (!query[fieldName])
+		query[fieldName] = { $ne: null };
+	
+	const grouping = {
+		_id: null,
+		sum: { 
+			$sum: '$' + fieldName
+		},
+		avg: {
+			$avg: '$' + fieldName
+		},
+		min: { 
+			$min: '$' + fieldName
+		},
+		max: { 
+			$max: '$' + fieldName
+		},
+		count: {
+			$sum: 1
+		}
+	};
+
+	let mQuery = model.aggregate([
+		{ $match: query },
+		{ $group: grouping }
+	]);
+
+	const result = await mQuery;
+
+	if (!result || !result[0])
+		return null;
+
+	return {
+		count: result[0].count as number,
+		sum: result[0].sum as number,
+		avg: result[0].avg as number,
+		min: result[0].min as number,
+		max: result[0].max as number
+	};
 }

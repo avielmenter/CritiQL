@@ -108,8 +108,60 @@ export const RollQLType = new GraphQL.GraphQLObjectType({
 	})
 });
 
+export const RollsAggregateType = new GraphQL.GraphQLObjectType({
+	name: 'aggregate',
+	description: 'Aggregate data (sum, average, minimum, and maximum) for a list of rolls',
+
+	fields: () => ({
+		count: { type: GraphQL.GraphQLInt },
+		sum: { type: GraphQL.GraphQLInt },
+		avg: { type: GraphQL.GraphQLFloat },
+		min: { type: GraphQL.GraphQLInt },
+		max: { type: GraphQL.GraphQLInt }
+	})
+})
+
+function aggregateGenerator (fieldName : Roll.AGGREGATE_FIELDS) : (obj : any, args : any, context : any) => Promise<Roll.RollAggregate | null> {
+	return (filter, args, context) => Roll.aggregateField(context.db as Connection, fieldName, filter.args, filter.obj);
+}
+
+export const RollsQLType = new GraphQL.GraphQLObjectType({
+	name: 'rolls',
+	description: 'A list of rolls made',
+
+	fields: () => ({
+		list: {
+			type: new GraphQL.GraphQLList(RollQLType),
+			resolve: (filter : any, args : any, context : any) => {
+				const con = context.db as Connection;
+				return Roll.findRolls(con, filter.args, filter.obj);
+			}
+		},
+		count: {
+			type: GraphQL.GraphQLInt,
+			resolve: (filter, args, context) => Roll.count(context.db as Connection, filter.args, filter.obj)
+		},
+		totals: {
+			type: RollsAggregateType,
+			resolve: aggregateGenerator('total')
+		},
+		naturals: {
+			type: RollsAggregateType,
+			resolve: aggregateGenerator('natural')
+		},
+		damages: {
+			type: RollsAggregateType,
+			resolve: aggregateGenerator('damage')
+		},
+		kills: { 
+			type: RollsAggregateType,
+			resolve: aggregateGenerator('kills')
+		}
+	})
+});
+
 export const RollsQLField = {
-	type: new GraphQL.GraphQLList(RollQLType),
+	type: RollsQLType,
 	args: { 
 		id: { type: GraphQL.GraphQLID },
 		rollType: { type: RollTypeQLEnum },
@@ -122,8 +174,7 @@ export const RollsQLField = {
 		totalAtMost: { type: GraphQL.GraphQLInt },
 		limit: { type: GraphQL.GraphQLInt }
 	},
-	resolve: (obj : any, args : any, context : any) => {
-		const con = context.db as Connection;
-		return Roll.findRolls(con, args, obj);
+	resolve: (obj : any, args : any, context : any) => { 
+		return { obj: obj, args: args, context: context }
 	}
 }
