@@ -10,6 +10,7 @@ dotenv.config();
 const app = express();
 
 import apiRouter from './routes/api';
+import { getConnection} from './data/schema/db';
 
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
 app.use('/bundle.js', (req, res) => { 
@@ -22,6 +23,15 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(methodOverride());
+
+app.use((req : any, res : express.Response, next : express.NextFunction) => {
+	req.dbConnection = getConnection();
+
+	if (!req.dbConnection)
+		next(new Error("Could not connect to database."));
+	else
+		next();
+});
 
 app.use('/graphql', apiRouter);
 

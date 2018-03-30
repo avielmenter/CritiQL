@@ -1,9 +1,10 @@
 import * as mongoose from 'mongoose';
 
-import { Book, COLUMNS, VM_SPREADSHEET_ID } from '../sheets';
+import { api, Book, COLUMNS, getSheetData, MN_SPREADSHEET_ID, VM_SPREADSHEET_ID } from '../sheets';
 import * as Episode from './episode';
 import * as Character from './character';
 import * as Roll from './roll';
+import * as RequestLog from './request-log';
 
 export function getConnection() : mongoose.Connection {
 	const dbAuth = (process.env.CRITIQL_DB_USER === undefined || process.env.CRITIQL_DB_USER == '') ? 
@@ -66,4 +67,32 @@ export async function fillFromBook(con : mongoose.Connection, book : Book) : Pro
 	console.log("Inserting rolls...");
 
 	return await Roll.createFromBook(con, book, characters, episodes);
+}
+
+async function shouldSkipSpreadsheetRetrieval(con : mongoose.Connection, ip : string) : Promise<boolean> {
+	const secondsSinceLastLog = await RequestLog.secondsSinceLastLog(con);
+	const shouldFetch = secondsSinceLastLog >= (process.env.CRITIQL_SHEETS_RATE_LIMIT || 600);
+
+	await RequestLog.createLog(con, ip, shouldFetch);
+	return !shouldFetch;
+}
+
+export async function fillDB(con : mongoose.Connection, ip : string) : Promise<number> {
+	if (await shouldSkipSpreadsheetRetrieval(con, ip))
+		return 0;
+
+	console.log('Retrieving spreadsheets...')
+
+	const books = await Promise.all([
+		getSheetData(api, VM_SPREADSHEET_ID),
+		getSheetData(api, MN_SPREADSHEET_ID)
+	]);
+
+	if (!books || books.some(book => !book))
+		return 0;
+
+	console.log('Spreadsheets retrieved.');
+
+	const rolls = await Promise.all(books.map(book => fillFromBook(con, book as Book)));
+	return rolls.map(r => r.length).reduce((prev, curr) => prev + curr);
 }
