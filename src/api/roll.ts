@@ -149,10 +149,6 @@ export const RollsQLType = new GraphQL.GraphQLObjectType({
 			type: RollsAggregateType,
 			resolve: aggregateGenerator('natural')
 		},
-		damages: {
-			type: RollsAggregateType,
-			resolve: aggregateGenerator('damage')
-		},
 		kills: { 
 			type: RollsAggregateType,
 			resolve: aggregateGenerator('kills')
