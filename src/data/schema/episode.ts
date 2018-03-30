@@ -59,6 +59,13 @@ export async function getEpisodeById(con : mongoose.Connection, id : string) : P
 	return await model.findById(id);
 }
 
+export async function getEpisodesById(con : mongoose.Connection, ids : string[]) : Promise<(Episode | null)[]> {
+	const model = getModel(con);
+	const matching = await model.find({ _id: { $in: ids } });
+
+	return ids.map(id => matching.find(e => e._id.toString() == id) || null);
+}
+
 export async function markRollsInDB(episode : Episode) : Promise<Episode> {
 	return episode.update(
 		{ $set: { rollsInDB: true } },

@@ -10,8 +10,11 @@ import { EpisodeDictionary } from '../data/schema/episode';
 import * as RequestLog from '../data/schema/request-log';
 
 import { QuerySchema } from '../api/schema';
+import { getEpisodeLoader, getCharacterLoader } from '../api/loaders';
 
 let router = Router();
+
+let dbConnection : Connection | null = null;
 
 async function shouldSkipSpreadsheetRetrieval(con : Connection, req : Request) : Promise<boolean> {
 	const secondsSinceLastLog = await RequestLog.secondsSinceLastLog(con);
@@ -51,22 +54,37 @@ function fillDBHandler(req : Request, res : Response, next : NextFunction) {
 	next();
 }
 
-router.get('/', fillDBHandler, graphqlHTTP({
+function connectToDBHandler(req : any, res : Response, next : NextFunction) {
+	req.dbConnection = DB.getConnection();
+
+	if (!req.dbConnection)
+		next(new Error("Could not connect to database."));
+	else
+		next();
+}
+
+router.get('/', fillDBHandler, connectToDBHandler, graphqlHTTP((req : any, res : Response) => ({
 	schema: QuerySchema,
 	graphiql: true,
-	context: { db: DB.getConnection() }
-}));
+	context: { 
+		db: req.dbConnection,
+		loaders: {
+			episodes: getEpisodeLoader(req.dbConnection),
+			characters: getCharacterLoader(req.dbConnection)
+		}
+	}
+})));
 
-router.post('/', graphqlHTTP({
+router.post('/', connectToDBHandler, graphqlHTTP((req : any, res : Response) => ({
 	schema: QuerySchema,
 	graphiql: false,
 	context: { 
-		db: DB.getConnection(),
-		cache: {
-			characters: {} as CharacterDictionary,
-			episodes: {} as EpisodeDictionary
+		db: req.dbConnection,
+		loaders: {
+			episodes: getEpisodeLoader(req.dbConnection),
+			characters: getCharacterLoader(req.dbConnection)
 		}
 	}
-}))
+})))
 
 export default router;

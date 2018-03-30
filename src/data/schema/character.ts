@@ -55,6 +55,13 @@ export async function getCharacterById(con : mongoose.Connection, id : string) :
 	return await model.findById(id);
 }
 
+export async function getCharactersById(con : mongoose.Connection, ids : string[]) : Promise<(Character | null)[]> {
+	const model = getModel(con);
+	const matching = await model.find({ _id: { $in: ids } });
+
+	return ids.map(id => matching.find(c => c._id.toString() == id) || null);
+}
+
 export async function createCharacter(con : mongoose.Connection, name : string) : Promise<Character | null> {
 	const model = getModel(con);
 	const sanitizedName = sanitizeCharacterName(name);

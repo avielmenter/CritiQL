@@ -80,11 +80,11 @@ export const RollQLType = new GraphQL.GraphQLObjectType({
 		},
 		episode: {
 			type: EpisodeQLType,
-			resolve: (r : Roll.Roll, args, context) => Episode.getEpisodeById(context.db, r.episode_id) 
+			resolve: (r : Roll.Roll, args, context) => context.loaders.episodes.load(r.episode_id) 
 		},
 		character: { 
 			type: CharacterQLType, 
-			resolve: (r : Roll.Roll, args, context) => Character.getCharacterById(context.db, r.character_id)
+			resolve: (r : Roll.Roll, args, context) => context.loaders.characters.load(r.character_id)
 		},
 		time: { type: RollTimeQLType },
 		timeString : {
