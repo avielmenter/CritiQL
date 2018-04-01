@@ -2,9 +2,9 @@
 	<div class="episodeStats" v-if="episode.title">
 		<h2>Stats for {{ episode.title }}</h2>
 		<ul>
-			<li v-if="episode.damageRolls.totals"><strong>Damage Dealt:</strong> {{ episode.damageRolls.totals.sum }}</li>
-			<li><strong># of Natural 20s:</strong> {{ episode.critRolls.count }}</li>
-			<li><strong># of Natural 1s:</strong> {{ episode.critFails.count }}</li>
+			<li><strong>Damage Dealt:</strong> {{ episode.damageRolls.totals ? episode.damageRolls.totals.sum : 'None' }}</li>
+			<li><strong># of Natural 20s:</strong> {{ episode.critRolls.count || 'None'}}</li>
+			<li><strong># of Natural 1s:</strong> {{ episode.critFails.count || 'None' }}</li>
 			<li><strong>Best Character:</strong> Fjord</li>
 		</ul>
 	</div>
