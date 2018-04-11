@@ -29,8 +29,8 @@ function createSkillQLTypeEnum() {
 }
 
 function getTimeString(time : Roll.RollTime | null) {
-	if (!time)
-		return '';
+	if (!time || !time.hours || !time.minutes || !time.seconds)
+		return null;
 
 	return time.hours.toString() + ':' + time.minutes.toString().padStart(2, '0') + ':' + time.seconds.toString().padStart(2, '0');
 }
@@ -89,7 +89,7 @@ export const RollQLType = new GraphQL.GraphQLObjectType({
 		time: { type: RollTimeQLType },
 		timeString : {
 			type: GraphQL.GraphQLString,
-			resolve: (r : Roll.Roll) => !r.time ? '' : getTimeString(r.time)
+			resolve: (r : Roll.Roll) => getTimeString(r.time)
 		},
 		rollType: { 
 			type: GraphQL.GraphQLString,

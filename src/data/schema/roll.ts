@@ -70,7 +70,9 @@ export enum ROLL_TYPE {
 	PARRY,
 	RESURRECTION_ROLL,
 	SLEEP_ARROW,
-	DEATH_SAVE
+	DEATH_SAVE,
+	HIT_POINTS,
+	FORGERY_KIT
 };
 
 const rollTypeErrors : { [badType : string] : string } = {

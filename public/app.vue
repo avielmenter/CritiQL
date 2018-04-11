@@ -20,10 +20,10 @@
 				</div>
 			</div>
 		</nav>
-		<!-- 
+		
 		<h1>&#9888; Front-End Coming Soon &#9888;</h1>
 		<p>For now, please enjoy the <a href="/graphql">GraphQL API</a>.</p>
-		-->
+		
 		<main>
 			<router-view></router-view>
 		</main>
@@ -108,9 +108,9 @@
 	const router = new VueRouter({
 		mode: 'history',
 		routes: [
-			{ path: '/home', name: 'home', component: HomePage },
-			{ path: '/characters', name: 'characters', component: {  } },
-			{ path: '/episodes', name: 'episodes', component: {  } },
+			{ path: '/home', name: 'home', component: { } }, //HomePage },
+			{ path: '/characters', name: 'characters', component: { } },
+			{ path: '/episodes', name: 'episodes', component: { } },
 			{ path: '/rolls', name: 'rolls', component: { } }
 		]
 	});
