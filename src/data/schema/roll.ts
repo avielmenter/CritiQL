@@ -263,7 +263,7 @@ export async function clearEpisodeRolls(con : mongoose.Connection, episode : Epi
 	const model = getModel(con);
 	await model.remove({ episode_id: episode._id });
 
-	return episode.update({ $set: { rollsInDB: false } }, { new: true });
+	return await episode.update({ $set: { rollsInDB: false } }, { new: true });
 }
 
 export async function createFromSheetRow(con : mongoose.Connection, character : Character, episode : Episode, row : RowDictionary) : Promise<Roll> {
@@ -285,7 +285,27 @@ function createFromEpisode(sheet : Sheet, episode : Episode, characters : Charac
 	});
 }
 
+function getLatestEpisode(episodes : Episode[]) : Episode | null {
+	const CURRENT_CAMPAIGN = 2;
+	const campaignEpisodes = episodes.filter(e => e.campaign == CURRENT_CAMPAIGN).sort((a, b) => (b.episodeNo || -Infinity) - (a.episodeNo || -Infinity));
+
+	return campaignEpisodes.length <= 0 ? null :campaignEpisodes[0];
+}
+
+async function clearLatestEpisode(con : mongoose.Connection, episodes : EpisodeDictionary) : Promise<Episode | null> {
+	const latestEpisode = getLatestEpisode(Object.values(episodes));
+	if (!latestEpisode)
+		return null;
+
+	await clearEpisodeRolls(con, latestEpisode);
+	episodes[latestEpisode.title].rollsInDB = false;
+
+	return episodes[latestEpisode.title];
+}
+
 export async function createFromBook(con : mongoose.Connection, book : Book, characters : CharacterDictionary, episodes : EpisodeDictionary) : Promise<Roll[]> {
+	const latestEpisode = await clearLatestEpisode(con, episodes);
+
 	const rollDocs = Object.keys(book.sheets).map(title => {
 		const sheet = book.sheets[title];
 		const episode = episodes[title];

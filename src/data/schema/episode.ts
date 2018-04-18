@@ -67,7 +67,7 @@ export async function getEpisodesById(con : mongoose.Connection, ids : string[])
 }
 
 export async function markRollsInDB(episode : Episode) : Promise<Episode> {
-	return episode.update(
+	return await episode.update(
 		{ $set: { rollsInDB: true } },
 		{ new: true }	
 	);
