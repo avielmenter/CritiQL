@@ -29,7 +29,7 @@ function createSkillQLTypeEnum() {
 }
 
 function getTimeString(time : Roll.RollTime | null) {
-	if (!time || !time.hours || !time.minutes || !time.seconds)
+	if (!time)
 		return null;
 
 	return time.hours.toString() + ':' + time.minutes.toString().padStart(2, '0') + ':' + time.seconds.toString().padStart(2, '0');

@@ -6,15 +6,44 @@ import * as Character from './character';
 import * as Roll from './roll';
 import * as RequestLog from './request-log';
 
-export function getConnection() : mongoose.Connection {
+var CONNECTION : mongoose.Connection | null = null;
+
+function getConnectionString() {
 	const dbAuth = (process.env.CRITIQL_DB_USER === undefined || process.env.CRITIQL_DB_USER == '') ? 
 					'' : (process.env.CRITIQL_DB_USER + ':' + process.env.CRITIQL_DB_PASSWORD + '@');
 
 	const conStr = 'mongodb://' + dbAuth + process.env.CRITIQL_DB_SERVER + ':' + process.env.CRITIQL_DB_PORT + '/' +
-					 process.env.CRITIQL_DB_SCHEMA + 
-					 (!process.env.CRITIQL_DB_OPTIONS ? '' : '?' + process.env.CRITIQL_DB_OPTIONS);
+					process.env.CRITIQL_DB_SCHEMA + 
+					(!process.env.CRITIQL_DB_OPTIONS ? '' : '?' + process.env.CRITIQL_DB_OPTIONS);
 
-	return mongoose.createConnection(conStr);
+	return conStr;
+}
+
+export function getConnection() : mongoose.Connection {
+	if (!CONNECTION) {
+		CONNECTION = mongoose.createConnection(getConnectionString());
+		console.log("New MongoDB connection opened.");
+	}
+
+	return CONNECTION;
+}
+
+export async function closeConnection() : Promise<void> {
+	if (CONNECTION != null)
+		await CONNECTION.close();
+}
+
+export async function useTemporaryConnection<T>(use : (_con : mongoose.Connection) => Promise<T>) : Promise<T> {
+	const con = mongoose.createConnection(getConnectionString());
+	
+	try {
+		return await use(con);
+	} catch (err) {
+		throw err;
+	} finally {
+		if (con)
+			con.close();
+	}
 }
 
 function getCampaignNumber(spreadsheetId : string) : number {

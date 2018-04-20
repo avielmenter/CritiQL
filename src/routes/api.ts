@@ -15,43 +15,30 @@ import { getEpisodeLoader, getCharacterLoader } from '../api/loaders';
 let router = Router();
 
 function fillDBHandler(req : Request, res : Response, next : NextFunction) {
-	const con = DB.getConnection();
-	
-	DB.fillDB(con, req.ip)
-		.then(rolls => {
-			console.log(rolls + " rolls added to database.")
-			con.close();
-		})
-		.catch(err => {
-			console.error(err)
-			con.close();
-		});
+	DB.useTemporaryConnection((con : Connection) => DB.fillDB(con, req.ip))
+		.then(rolls => console.log(rolls + " rolls added to database."))
+		.catch(err => console.error(err));
 
 	next();
 }
 
-router.get('/', fillDBHandler, graphqlHTTP(async (req : any, res : Response) => ({
-	schema: await getQuerySchema(req.dbConnection),
-	graphiql: true,
-	context: { 
-		db: req.dbConnection,
-		loaders: {
-			episodes: getEpisodeLoader(req.dbConnection),
-			characters: getCharacterLoader(req.dbConnection)
-		}
-	}
-})));
+function getGraphQLMiddleware(useGraphiql : boolean) : graphqlHTTP.Middleware {
+	const con = DB.getConnection();
 
-router.post('/', graphqlHTTP(async (req : any, res : Response) => ({
-	schema: await getQuerySchema(req.dbConnection),
-	graphiql: false,
-	context: { 
-		db: req.dbConnection,
-		loaders: {
-			episodes: getEpisodeLoader(req.dbConnection),
-			characters: getCharacterLoader(req.dbConnection)
+	return graphqlHTTP(async (req : any, res : Response) => ({
+		schema: await getQuerySchema(con),
+		graphiql: useGraphiql,
+		context: { 
+			db: con,
+			loaders: {
+				episodes: getEpisodeLoader(con),
+				characters: getCharacterLoader(con)
+			}
 		}
-	}
-})))
+	}));
+}
+
+router.get('/', fillDBHandler, getGraphQLMiddleware(true));
+router.post('/', getGraphQLMiddleware(false));
 
 export default router;

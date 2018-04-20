@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 
 import apiRouter from './routes/api';
-import { getConnection} from './data/schema/db';
+import { getConnection, closeConnection } from './data/schema/db';
 
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
 app.use('/bundle.js', (req, res) => { 
@@ -23,15 +23,6 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(bodyParser.json({ type: 'application/vnd.api+json' }));
 app.use(methodOverride());
-
-app.use((req : any, res : express.Response, next : express.NextFunction) => {
-	req.dbConnection = getConnection();
-
-	if (!req.dbConnection)
-		next(new Error("Could not connect to database."));
-	else
-		next();
-});
 
 app.use('/graphql', apiRouter);
 
@@ -55,5 +46,11 @@ app.use((err : Error, req : express.Request, res : express.Response, next : expr
 });
 
 app.listen(process.env.PORT || 3000, () => console.log('CritiQL listening on port ' + (process.env.PORT || 3000) + '.'));
+
+process.on('SIGINT', () => {
+	closeConnection()
+		.then(() => console.log("MongoDB Connection closed."))
+		.catch(err => console.error("Error closing MongoDB Connection: " + err));
+});
 
 export default app;
