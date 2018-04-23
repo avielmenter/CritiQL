@@ -3,11 +3,31 @@
 	<head>
 		<title>CritiQL</title>
 		<meta charset="utf-8" />
+		<link rel="stylesheet" type="text/css" href="style.css" />
+		<!-- GitHub Button script -->
+		<script async defer src="https://buttons.github.io/buttons.js"></script>
 	</head>
 	<body>
-		<div id="root">
-			
-		</div>
-		<script type="text/javascript" src="/bundle.js"></script>
+		<main>
+			<img id="logo" src="images/logo.png" alt="CritiQL Logo" />
+			<h1>Criti<span id="title_pink">QL</span></h1>
+			<h2>About</h2>
+			<p>CritiQL (pronounced "critical") is a <a href="https://graphql.org/">GraphQL</a> API for querying CritRoleStats roll data. It allows users to query the CritRoleStats <a href="https://docs.google.com/spreadsheets/d/1OEg29XbL_YpO0m5JrLQpOPYTnxVsIg8iP67EYUrtRJg/edit">Vox Machina</a> and <a href="https://docs.google.com/spreadsheets/d/1FFuw5c6Hk1NUlHv2Wvr5b9AElLA51KtRl9ZruPU8r9k/edit#gid=0">Mighty Nein</a> spreadsheets using GraphQL.</p>
+			<p>Critters have <a href="https://www.critrolestats.com/blog/2017/10/19/quick-answers-58">previously requested</a> an API, but CritRoleStats has so far declined to make one. Thankfully, Google exposes spreadsheet data through their own API, which CritiQL uses to download CritRoleStats' data and make it queryable via GraphQL.</p>
+			<p>Although CritiQL is not in active development, I am still happy to implement new features. If you think of any that you would like, feel free to ping or message <code>@avi#0885</code> on the <a href="https://www.reddit.com/r/criticalrole/comments/4a9jcs/no_spoilers_we_have_a_discord_server/">Critical Role Discord</a>.</p>
+			<p>CritiQL would not be possible without CritRoleStats' diligent and painstaking data gathering over the past several years. If you like this project, you can show your appreciation by going to the <a href="https://www.critrolestats.com/">CritRoleStats</a> website and donating to them.</p>
+			<h2>Try It!</h2>
+			<p>You can write and run GraphQL queries against the CritiQL API <a href="http://critiql.herokuapp.com/graphql">here</a>.</p>
+			<h2>GitHub</h2>
+			<p>All CritiQL code is stored on <a href="https://github.com/avielmenter/critiql">GitHub</a>.</p>
+			<p>
+				<a class="github-button" href="https://github.com/avielmenter/critiql/subscription" data-size="large" data-icon="octicon-eye" aria-label="Watch avielmenter/critiql on GitHub">Watch</a>
+				<a class="github-button" href="https://github.com/avielmenter/critiql" data-size="large" data-icon="octicon-star" aria-label="Star avielmenter/critiql on GitHub">Star</a>
+				<a class="github-button" href="https://github.com/avielmenter/critiql/fork" data-size="large" data-icon="octicon-repo-forked" aria-label="Fork avielmenter/critiql on GitHub">Fork</a>
+				<a class="github-button" href="https://github.com/avielmenter/critiql/issues" data-size="large" data-icon="octicon-issue-opened" aria-label="Issue avielmenter/critiql on GitHub">Issue</a>
+				<a class="github-button" href="https://github.com/avielmenter/critiql/archive/master.zip" data-size="large" data-icon="octicon-cloud-download" aria-label="Download avielmenter/critiql on GitHub">Download</a>
+			</p>
+		</main>
+		<footer>Copyright &copy; Aviel Menter 2018. This project is licensed under the <a href="https://github.com/avielmenter/CritiQL/blob/master/LICENSE">MIT License</a>.</footer>
 	</body>
 </html>

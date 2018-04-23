@@ -13,9 +13,6 @@ import apiRouter from './routes/api';
 import { getConnection, closeConnection } from './data/schema/db';
 
 app.use(favicon(path.join(__dirname, '../public', 'favicon.ico')));
-app.use('/bundle.js', (req, res) => { 
-	res.sendFile(path.join(__dirname, '../dist/bundle.js'));
-});
 app.use(express.static(path.join(__dirname, '../public')));
 
 app.use(logger('dev'));

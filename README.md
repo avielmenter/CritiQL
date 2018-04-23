@@ -6,7 +6,7 @@ CritiQL (pronounced "critical") is a [GraphQL](https://graphql.org/) API for que
 
 Critters have [previously requested](https://www.critrolestats.com/blog/2017/10/19/quick-answers-58) an API, but CritRoleStats has so far declined to make one. Thankfully, Google exposes spreadsheet data through their own API, which CritiQL uses to download CritRoleStats' data and make it queryable via GraphQL.
 
-CritiQL is still in early development, and many features have yet to be implemented. If you think of any that you would like, feel free to ping or message `@avi#0885` on the [Critical Role Discord](https://www.reddit.com/r/criticalrole/comments/4a9jcs/no_spoilers_we_have_a_discord_server/).
+Although CritiQL is not in active development, I am still happy to implement new features. If you think of any that you would like, feel free to ping or message `@avi#0885` on the [Critical Role Discord](https://www.reddit.com/r/criticalrole/comments/4a9jcs/no_spoilers_we_have_a_discord_server/).
 
 CritiQL would not be possible without CritRoleStats' diligent and painstaking data gathering over the past several years. If you like this project, you can show your appreciation by going to the [CritRoleStats](https://www.critrolestats.com/) website and donating to them. 
 

@@ -9,7 +9,7 @@
 		"start:dev": "tsc-watch --onSuccess \"node build/app.js\"",
 		"build": "webpack --mode=production",
 		"build:watch": "webpack --watch --mode=development",
-		"postinstall": "webpack --mode=production && tsc"
+		"postinstall": "tsc"
 	},
 	"repository": {
 		"type": "git",
