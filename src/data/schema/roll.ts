@@ -72,10 +72,12 @@ export enum ROLL_TYPE {
 	SLEEP_ARROW,
 	DEATH_SAVE,
 	HIT_POINTS,
-	FORGERY_KIT
+	FORGERY_KIT,
+	FRAGMENT,
+	BLINK
 };
 
-const rollTypeErrors : { [badType : string] : string } = {
+const rollTypeErrors: { [badType: string]: string } = {
 	'STEATH': 'STEALTH',
 	'WISDOM_SAVE?': 'WISDOM_SAVE',
 	'WISDOM_SAVING': 'WISDOM_SAVE',
@@ -86,33 +88,38 @@ const rollTypeErrors : { [badType : string] : string } = {
 	'ARCANA?': 'ARCANA',
 	'RESSURECTION_ROLL': 'RESURRECTION_ROLL',
 	'PERSUASION?': 'PERSUASION',
-	'FIX': 'TINKERING'
+	'FIX': 'TINKERING',
+	'INDIMIDATION': 'INTIMIDATION',
+	'DAMGE': 'DAMAGE',
+	'FORGERY': 'FORGERY_KIT',
+	'INISGHT': 'INSIGHT',
+	'TRACKING': 'SURVIVAL'
 }
 
 export type AGGREGATE_FIELDS = 'total' | 'natural' | 'damage' | 'kills';
 
 export type SKILL_TYPE = 'STR' | 'DEX' | 'CON' | 'INT' | 'WIS' | 'CHA';
 
-type SkillRange = { 
-	$gte : ROLL_TYPE,
-	$lt : ROLL_TYPE
+type SkillRange = {
+	$gte: ROLL_TYPE,
+	$lt: ROLL_TYPE
 }
 
 export type RollTime = {
-	hours : number,
-	minutes : number,
-	seconds : number
+	hours: number,
+	minutes: number,
+	seconds: number
 }
 
 export type RollAggregate = {
-	count : number,
-	sum : number,
-	avg : number | null,
-	min : number,
-	max : number
+	count: number,
+	sum: number,
+	avg: number | null,
+	min: number,
+	max: number
 }
 
-export const SKILLS : { [key in SKILL_TYPE] : SkillRange } = {
+export const SKILLS: { [key in SKILL_TYPE]: SkillRange } = {
 	STR: {
 		$gte: ROLL_TYPE.STRENGTH,
 		$lt: ROLL_TYPE.DEXTERITY
@@ -140,40 +147,40 @@ export const SKILLS : { [key in SKILL_TYPE] : SkillRange } = {
 };
 
 export interface Roll extends mongoose.Document {
-	episode_id : string,
-	character_id : string,
-	time : RollTime | null,
-	type_of_roll : ROLL_TYPE,
-	roll_type_raw : string,
-	total : number,
-	natural : number | null,
-	crit : boolean,
-	damage : string | null,
-	kills : number,
-	notes : string | null
+	episode_id: string,
+	character_id: string,
+	time: RollTime | null,
+	type_of_roll: ROLL_TYPE,
+	roll_type_raw: string,
+	total: number,
+	natural: number | null,
+	crit: boolean,
+	damage: string | null,
+	kills: number,
+	notes: string | null
 };
 
 type Model = mongoose.Model<Roll>;
 
-const schema : mongoose.Schema = new mongoose.Schema({
-	episode_id : mongoose.Schema.Types.ObjectId,
-	character_id : mongoose.Schema.Types.ObjectId,
-	time : {
-		hours : Number,
-		minutes : Number,
-		seconds : Number
+const schema: mongoose.Schema = new mongoose.Schema({
+	episode_id: mongoose.Schema.Types.ObjectId,
+	character_id: mongoose.Schema.Types.ObjectId,
+	time: {
+		hours: Number,
+		minutes: Number,
+		seconds: Number
 	},
-	type_of_roll : Number,
-	roll_type_raw : String,
-	total : Number,
-	natural : Number,
-	crit : Boolean,
-	damage : String,
-	kills : Number,
-	notes : String
+	type_of_roll: Number,
+	roll_type_raw: String,
+	total: Number,
+	natural: Number,
+	crit: Boolean,
+	damage: String,
+	kills: Number,
+	notes: String
 });
 
-function timeFromRow(row : RowDictionary) : RollTime | null {
+function timeFromRow(row: RowDictionary): RollTime | null {
 	const timeString = row[COLUMNS.TIME];
 	if (!timeString)
 		return null;
@@ -193,18 +200,18 @@ function timeFromRow(row : RowDictionary) : RollTime | null {
 	};
 }
 
-function getRollType(typeString : string) : ROLL_TYPE {
+function getRollType(typeString: string): ROLL_TYPE {
 	if (!typeString)
 		return ROLL_TYPE.UNKNOWN;
 
 	const formatted = typeString.trim()
-								.replace('\'', '')
-								.replace(/\s+/g, '_')
-								.toUpperCase();
+		.replace('\'', '')
+		.replace(/\s+/g, '_')
+		.toUpperCase();
 
 	const corrected = Object.keys(rollTypeErrors).includes(formatted) ? rollTypeErrors[formatted] : formatted;
 
-	const maybeRollType : ROLL_TYPE | undefined = (<any>ROLL_TYPE)[corrected];
+	const maybeRollType: ROLL_TYPE | undefined = (<any>ROLL_TYPE)[corrected];
 	if (!maybeRollType) {
 		console.log("UKNOWN ROLL TYPE:");
 		console.log('\t' + typeString);
@@ -214,14 +221,14 @@ function getRollType(typeString : string) : ROLL_TYPE {
 	return maybeRollType;
 }
 
-function isCrit(critStr : string) : boolean {
-	if(!critStr)
+function isCrit(critStr: string): boolean {
+	if (!critStr)
 		return false;
 
 	return critStr.trim().toLowerCase().charAt(0) == 'y';
 }
 
-function sanitizeNaturalRoll(natStr : string) : number | null {
+function sanitizeNaturalRoll(natStr: string): number | null {
 	if (!natStr)
 		return null;
 
@@ -229,14 +236,14 @@ function sanitizeNaturalRoll(natStr : string) : number | null {
 	return !rollInt ? null : rollInt;
 }
 
-function sanitizeInt(totalStr : string) : number | null {
+function sanitizeInt(totalStr: string): number | null {
 	if (!totalStr || !parseInt(totalStr))
 		return null;
 
 	return parseInt(totalStr);
 }
 
-function getRollDocument(character : Character, episode : Episode, row : RowDictionary) : any {
+function getRollDocument(character: Character, episode: Episode, row: RowDictionary): any {
 	const rollTime = timeFromRow(row);
 	const rollType = getRollType(row[COLUMNS.TYPE_OF_ROLL]);
 
@@ -255,25 +262,25 @@ function getRollDocument(character : Character, episode : Episode, row : RowDict
 	};
 }
 
-function getModel(con : mongoose.Connection) : Model {
+function getModel(con: mongoose.Connection): Model {
 	return con.model('Roll', schema);
 }
 
-export async function clearEpisodeRolls(con : mongoose.Connection, episode : Episode) : Promise<Episode> {
+export async function clearEpisodeRolls(con: mongoose.Connection, episode: Episode): Promise<Episode> {
 	const model = getModel(con);
 	await model.remove({ episode_id: episode._id });
 
 	return await episode.update({ $set: { rollsInDB: false } }, { new: true });
 }
 
-export async function createFromSheetRow(con : mongoose.Connection, character : Character, episode : Episode, row : RowDictionary) : Promise<Roll> {
+export async function createFromSheetRow(con: mongoose.Connection, character: Character, episode: Episode, row: RowDictionary): Promise<Roll> {
 	const rollDoc = getRollDocument(character, episode, row);
 	const model = getModel(con);
 
 	return await model.create(rollDoc);
 }
 
-function createFromEpisode(sheet : Sheet, episode : Episode, characters : CharacterDictionary) {
+function createFromEpisode(sheet: Sheet, episode: Episode, characters: CharacterDictionary) {
 	if (episode.rollsInDB)
 		return []; // skip episodes whose rolls are already in the database
 
@@ -285,14 +292,14 @@ function createFromEpisode(sheet : Sheet, episode : Episode, characters : Charac
 	});
 }
 
-function getLatestEpisode(episodes : Episode[]) : Episode | null {
+function getLatestEpisode(episodes: Episode[]): Episode | null {
 	const CURRENT_CAMPAIGN = 2;
 	const campaignEpisodes = episodes.filter(e => e.campaign == CURRENT_CAMPAIGN).sort((a, b) => (b.episodeNo || -Infinity) - (a.episodeNo || -Infinity));
 
-	return campaignEpisodes.length <= 0 ? null :campaignEpisodes[0];
+	return campaignEpisodes.length <= 0 ? null : campaignEpisodes[0];
 }
 
-async function clearLatestEpisode(con : mongoose.Connection, episodes : EpisodeDictionary) : Promise<Episode | null> {
+async function clearLatestEpisode(con: mongoose.Connection, episodes: EpisodeDictionary): Promise<Episode | null> {
 	const latestEpisode = getLatestEpisode(Object.values(episodes));
 	if (!latestEpisode)
 		return null;
@@ -303,7 +310,7 @@ async function clearLatestEpisode(con : mongoose.Connection, episodes : EpisodeD
 	return episodes[latestEpisode.title];
 }
 
-export async function createFromBook(con : mongoose.Connection, book : Book, characters : CharacterDictionary, episodes : EpisodeDictionary) : Promise<Roll[]> {
+export async function createFromBook(con: mongoose.Connection, book: Book, characters: CharacterDictionary, episodes: EpisodeDictionary): Promise<Roll[]> {
 	const latestEpisode = await clearLatestEpisode(con, episodes);
 
 	const rollDocs = Object.keys(book.sheets).map(title => {
@@ -321,8 +328,8 @@ export async function createFromBook(con : mongoose.Connection, book : Book, cha
 	return rolls;
 }
 
-function getQuery(filter : any, parent? : any) : any {
-	let query : any = {};
+function getQuery(filter: any, parent?: any): any {
+	let query: any = {};
 
 	if (parent && parent.title) 			// for searching by episode
 		query.episode_id = mongoose.Types.ObjectId(parent._id);
@@ -357,9 +364,9 @@ function getQuery(filter : any, parent? : any) : any {
 	return query;
 }
 
-export async function findRolls(con : mongoose.Connection, filter : any, parent? : any) : Promise<Roll[]> {
+export async function findRolls(con: mongoose.Connection, filter: any, parent?: any): Promise<Roll[]> {
 	const model = getModel(con);
-	
+
 	if (filter.id) {
 		const roll = await model.findById(filter.id);
 		return !roll ? [] : [roll];
@@ -374,7 +381,7 @@ export async function findRolls(con : mongoose.Connection, filter : any, parent?
 	return await mQuery;
 }
 
-export async function count(con : mongoose.Connection, filter : any, parent? : any) : Promise<number> {
+export async function count(con: mongoose.Connection, filter: any, parent?: any): Promise<number> {
 	const model = getModel(con);
 
 	if (filter.id) {
@@ -383,7 +390,7 @@ export async function count(con : mongoose.Connection, filter : any, parent? : a
 	}
 
 	const query = getQuery(filter, parent);
-	
+
 	let mQuery = model.count(query);
 	if (filter.limit)
 		mQuery.limit(filter.limit);
@@ -391,7 +398,7 @@ export async function count(con : mongoose.Connection, filter : any, parent? : a
 	return await mQuery;
 }
 
-export async function aggregateField(con : mongoose.Connection, fieldName : AGGREGATE_FIELDS, filter : any, parent? : any) : Promise<RollAggregate | null> {
+export async function aggregateField(con: mongoose.Connection, fieldName: AGGREGATE_FIELDS, filter: any, parent?: any): Promise<RollAggregate | null> {
 	const model = getModel(con);
 
 	if (filter.id) {
@@ -399,31 +406,31 @@ export async function aggregateField(con : mongoose.Connection, fieldName : AGGR
 		if (!roll)
 			return null;
 		else
-			return { 
+			return {
 				count: 1,
 				sum: roll[fieldName] as number,
 				avg: roll[fieldName] as number,
 				min: roll[fieldName] as number,
-				max: roll[fieldName] as number 
+				max: roll[fieldName] as number
 			};
 	}
 
 	let query = getQuery(filter, parent);
 	if (!query[fieldName])
 		query[fieldName] = { $ne: null };
-	
+
 	const grouping = {
 		_id: null,
-		sum: { 
+		sum: {
 			$sum: '$' + fieldName
 		},
 		avg: {
 			$avg: '$' + fieldName
 		},
-		min: { 
+		min: {
 			$min: '$' + fieldName
 		},
-		max: { 
+		max: {
 			$max: '$' + fieldName
 		},
 		count: {
