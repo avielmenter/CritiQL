@@ -74,7 +74,8 @@ export enum ROLL_TYPE {
 	HIT_POINTS,
 	FORGERY_KIT,
 	FRAGMENT,
-	BLINK
+	BLINK,
+	PERCENTILE
 };
 
 const rollTypeErrors: { [badType: string]: string } = {
@@ -83,17 +84,21 @@ const rollTypeErrors: { [badType: string]: string } = {
 	'WISDOM_SAVING': 'WISDOM_SAVE',
 	'DEX_SAVE': 'DEXTERITY_SAVE',
 	'ALCHEMY?': 'ALCHEMY_KIT',
+	'ALCHEMIST_KIT': 'ALCHEMY_KIT',
 	'BEARD_CHECK': 'BEARD',
-	'PERCENTILE': 'BEARD',
+	'PERCENTAGE': 'PERCENTILE',
 	'ARCANA?': 'ARCANA',
 	'RESSURECTION_ROLL': 'RESURRECTION_ROLL',
 	'PERSUASION?': 'PERSUASION',
+	'PERSUSASION': 'PERSUASION',
 	'FIX': 'TINKERING',
 	'INDIMIDATION': 'INTIMIDATION',
 	'DAMGE': 'DAMAGE',
 	'FORGERY': 'FORGERY_KIT',
 	'INISGHT': 'INSIGHT',
-	'TRACKING': 'SURVIVAL'
+	'TRACKING': 'SURVIVAL',
+	'WISDOM_CHECK': 'WISDOM',
+	'TINKERS_TOOLS': 'TINKERING'
 }
 
 export type AGGREGATE_FIELDS = 'total' | 'natural' | 'damage' | 'kills';
