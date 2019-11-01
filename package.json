@@ -46,7 +46,7 @@
 		"googleapis": "^27.0.0",
 		"graphql": "^0.13.2",
 		"method-override": "^2.3.10",
-		"mongoose": "^5.5.14",
+		"mongoose": "^5.7.5",
 		"morgan": "^1.9.1",
 		"nodemon": "^1.19.1",
 		"renamer": "^1.1.2",
