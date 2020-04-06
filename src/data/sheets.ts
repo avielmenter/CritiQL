@@ -4,48 +4,48 @@ import * as SheetRange from './sheet-range';
 import * as ValueRange from './value-range';
 import { promisify } from 'util';
 
-type GoogleAPICallback = (err : any, response : any) => void;
-type GoogleAPICall = (params : any, callback : GoogleAPICallback) => void;
+type GoogleAPICallback = (err: any, response: any) => void;
+type GoogleAPICall = (params: any, callback: GoogleAPICallback) => void;
 
-type IndexDictionary = { [column : string] : number };
-export type RowDictionary = { [column : string] : string };
+type IndexDictionary = { [column: string]: number };
+export type RowDictionary = { [column: string]: string };
 
 export interface SheetInfo {
-	properties : {
-		sheetId : number,
-		title : string,
-		index : number,
-		gridProperties : {
-			rowCount : number,
-			columnCount : number
+	properties: {
+		sheetId: number,
+		title: string,
+		index: number,
+		gridProperties: {
+			rowCount: number,
+			columnCount: number
 		}
 	},
-	merges? : [{
-		sheetId : number,
-		startRowIndex : number,
-		endRowIndex : number,
-		startColumnIndex : number,
-		endColumnIndex : number
+	merges?: [{
+		sheetId: number,
+		startRowIndex: number,
+		endRowIndex: number,
+		startColumnIndex: number,
+		endColumnIndex: number
 	}]
 }
 
 export interface Sheet {
-	info : SheetInfo,
-	rows : RowDictionary[],
-	cols : IndexDictionary
+	info: SheetInfo,
+	rows: RowDictionary[],
+	cols: IndexDictionary
 }
 
 export interface Info {
-	spreadsheetId : string,
-	properties : {
-		title : string
+	spreadsheetId: string,
+	properties: {
+		title: string
 	},
-	sheets : SheetInfo[]
+	sheets: SheetInfo[]
 };
 
 export interface Book {
-	info : Info,
-	sheets : { [sheetName : string]: Sheet }
+	info: Info,
+	sheets: { [sheetName: string]: Sheet }
 }
 
 export const api = google.sheets('v4');
@@ -65,18 +65,13 @@ export enum COLUMNS {
 	NOTES = 'Notes'
 };
 
-function promisifyAPICall(apiCall : GoogleAPICall, params : any) : Promise<any> {
-	return new Promise<any>((resolve : (r : any) => any, reject : (e : any) => any) => {
-		apiCall(params, (err : any, response : any) => {
-			if (err)
-				reject(err);
-			else
-				resolve(response);
-		});
+function promisifyAPICall(apiCall: GoogleAPICall, params: any): Promise<any> {
+	return new Promise<any>((resolve, reject) => {
+		apiCall(params, (err, response) => err ? reject(err) : resolve(response));
 	});
 }
 
-async function getValues(sheetsAPI : any, spreadsheetId : string, range : SheetRange.SheetRange) : Promise<ValueRange.ValueRange | null> {
+async function getValues(sheetsAPI: any, spreadsheetId: string, range: SheetRange.SheetRange): Promise<ValueRange.ValueRange | null> {
 	const params = {
 		auth: process.env.CRITIQL_SHEETS_KEY,
 		range: SheetRange.rangeToString(range),
@@ -88,7 +83,7 @@ async function getValues(sheetsAPI : any, spreadsheetId : string, range : SheetR
 	return ValueRange.ValueRange(response.data);
 }
 
-async function batchGetValues(sheetsAPI : any, spreadsheetId : string, ranges : SheetRange.SheetRange[]) : Promise<ValueRange.ValueRanges | null> {
+async function batchGetValues(sheetsAPI: any, spreadsheetId: string, ranges: SheetRange.SheetRange[]): Promise<ValueRange.ValueRanges | null> {
 	const params = {
 		auth: process.env.CRITIQL_SHEETS_KEY,
 		ranges: ranges.map(sr => SheetRange.rangeToString(sr)),
@@ -100,7 +95,7 @@ async function batchGetValues(sheetsAPI : any, spreadsheetId : string, ranges : 
 	return ValueRange.ValueRanges(response.data);
 }
 
-async function getSheetInfo(sheetsAPI : any, spreadsheetId : string) : Promise<Info | null> {
+async function getSheetInfo(sheetsAPI: any, spreadsheetId: string): Promise<Info | null> {
 	const params = {
 		auth: process.env.CRITIQL_SHEETS_KEY,
 		spreadsheetId: spreadsheetId,
@@ -108,7 +103,7 @@ async function getSheetInfo(sheetsAPI : any, spreadsheetId : string) : Promise<I
 	};
 
 	const response = await promisifyAPICall(sheetsAPI.spreadsheets.get, params);
-	
+
 	if (!response.data) return null;
 
 	try {
@@ -118,34 +113,34 @@ async function getSheetInfo(sheetsAPI : any, spreadsheetId : string) : Promise<I
 	}
 }
 
-function getHeaderRange(sheet : SheetInfo) : SheetRange.SheetRange {
-	const headerRowRange = "'" + sheet.properties.title + "'!A1:" + 
+function getHeaderRange(sheet: SheetInfo): SheetRange.SheetRange {
+	const headerRowRange = "'" + sheet.properties.title + "'!A1:" +
 		SheetRange.numberToColumnName(sheet.properties.gridProperties.columnCount) + "1";
 
 	return SheetRange.SheetRange(headerRowRange) as SheetRange.SheetRange;
 }
 
-function getColumnIndices(headerVR : ValueRange.ValueRange) : IndexDictionary {
-	let columns : IndexDictionary = {};
+function getColumnIndices(headerVR: ValueRange.ValueRange): IndexDictionary {
+	let columns: IndexDictionary = {};
 
 	if (!headerVR || !headerVR.values || headerVR.values.length != 1 || !headerVR.values[0])
 		return {};
 
-	const header : string[] = headerVR.values[0];
+	const header: string[] = headerVR.values[0];
 
 	for (let i = 0; i < header.length; i++) {
 		const colName = header[i] == 'Damage Dealt' ? 'Damage' : header[i];
 		if (!colName)
 			continue;
-		
+
 		columns[colName] = (colName in columns) ? Math.min(columns[colName], i) : i;
 	}
 
 	return columns;
 }
 
-function getRowDictionary(row : string[], indices : IndexDictionary) : RowDictionary {
-	let dict : RowDictionary = {};
+function getRowDictionary(row: string[], indices: IndexDictionary): RowDictionary {
+	let dict: RowDictionary = {};
 
 	for (let column of Object.keys(indices)) {
 		dict[column] = row[indices[column]];
@@ -154,18 +149,18 @@ function getRowDictionary(row : string[], indices : IndexDictionary) : RowDictio
 	return dict;
 }
 
-async function getSheetHeaders(sheetsAPI : any, info : Info) : Promise<ValueRange.ValueRanges | null> {
+async function getSheetHeaders(sheetsAPI: any, info: Info): Promise<ValueRange.ValueRanges | null> {
 	const headerRanges = info.sheets.map(si => getHeaderRange(si));
 	return batchGetValues(sheetsAPI, info.spreadsheetId, headerRanges);
 }
 
-async function getSheetColumns(sheetsAPI : any, info : Info) : Promise<{ [sheetName : string]: IndexDictionary }> {
-	let sheetHeaders : { [sheetName : string]: IndexDictionary } = {};
+async function getSheetColumns(sheetsAPI: any, info: Info): Promise<{ [sheetName: string]: IndexDictionary }> {
+	let sheetHeaders: { [sheetName: string]: IndexDictionary } = {};
 
 	const headers = await getSheetHeaders(sheetsAPI, info);
 	if (!headers)
 		return sheetHeaders;
-	
+
 	for (let h of headers.valueRanges) {
 		if (h.range.sheet)
 			sheetHeaders[h.range.sheet] = getColumnIndices(h);
@@ -174,13 +169,13 @@ async function getSheetColumns(sheetsAPI : any, info : Info) : Promise<{ [sheetN
 	return sheetHeaders;
 }
 
-function getDataRange(info : SheetInfo) : SheetRange.SheetRange {
-	const startCell : SheetRange.SheetCell = {
+function getDataRange(info: SheetInfo): SheetRange.SheetRange {
+	const startCell: SheetRange.SheetCell = {
 		column: 1,
 		row: 2
 	};
 
-	const endCell : SheetRange.SheetCell = {
+	const endCell: SheetRange.SheetCell = {
 		column: info.properties.gridProperties.columnCount,
 		row: info.properties.gridProperties.rowCount
 	};
@@ -192,7 +187,7 @@ function getDataRange(info : SheetInfo) : SheetRange.SheetRange {
 	};
 }
 
-export async function getSheetData(sheetsAPI : any, spreadsheetId : string) : Promise<Book | null> {
+export async function getSheetData(sheetsAPI: any, spreadsheetId: string): Promise<Book | null> {
 	const info = await getSheetInfo(sheetsAPI, spreadsheetId);
 	if (!info)
 		return null;
@@ -204,8 +199,8 @@ export async function getSheetData(sheetsAPI : any, spreadsheetId : string) : Pr
 	if (!sheetData)
 		return null;
 
-	let sheets : { [sheetName : string] : Sheet } = {};
-	
+	let sheets: { [sheetName: string]: Sheet } = {};
+
 	for (let sheet of info.sheets) {
 		sheets[sheet.properties.title] = {
 			info: sheet,
